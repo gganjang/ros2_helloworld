@@ -10,6 +10,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verify MuJoCo CPU requirements
+        run: |
+          if ! grep -qw avx /proc/cpuinfo; then
+            echo "ERROR: MuJoCo requires an x86-64 runner with AVX exposed."
+            exit 1
+          fi
+
       - name: Build developer and test image
         run: docker build --tag fr3-wave-ci:$GITHUB_SHA .
 
