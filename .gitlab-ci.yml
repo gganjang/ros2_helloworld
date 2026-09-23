@@ -1,0 +1,46 @@
+stages:
+  - test
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_DRIVER: overlay2
+
+headless-acceptance:
+  stage: test
+  image: docker:27-cli
+  services:
+    - name: docker:27-dind
+      command: ["--tls=false"]
+  before_script:
+    - docker info
+  script:
+    - docker build --tag "fr3-wave-ci:$CI_COMMIT_SHA" .
+    - mkdir -p test-artifacts
+    - >
+      docker run
+      --name "fr3-acceptance-$CI_JOB_ID"
+      --env CI_ARTIFACT_DIR=/workspace/test-artifacts
+      "fr3-wave-ci:$CI_COMMIT_SHA"
+      bash -lc
+      'source /workspace/install/setup.bash &&
+      colcon test &&
+      colcon test-result --verbose &&
+      /usr/bin/python3 -m pytest -q /workspace/tests/acceptance'
+    - docker cp "fr3-acceptance-$CI_JOB_ID:/workspace/test-artifacts/." test-artifacts/
+    - docker build --file Dockerfile.runtime --tag "fr3-wave-runtime:$CI_COMMIT_SHA" .
+    - >
+      docker run --rm "fr3-wave-runtime:$CI_COMMIT_SHA"
+      bash -lc
+      'ros2 pkg executables fr3_wave | grep -F "fr3_wave wave" &&
+      ros2 pkg executables fr3_wave | grep -F "fr3_wave spin" &&
+      ! ros2 pkg prefix mujoco_ros2_control'
+  after_script:
+    - mkdir -p test-artifacts
+    - docker cp "fr3-acceptance-$CI_JOB_ID:/workspace/test-artifacts/." test-artifacts/ 2>/dev/null || true
+    - docker rm -f "fr3-acceptance-$CI_JOB_ID" 2>/dev/null || true
+  artifacts:
+    when: always
+    paths:
+      - test-artifacts/
+    expire_in: 1 week

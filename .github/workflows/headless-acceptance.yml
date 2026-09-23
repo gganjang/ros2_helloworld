@@ -1,0 +1,39 @@
+name: Headless MuJoCo acceptance
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build developer and test image
+        run: docker build --tag fr3-wave-ci:$GITHUB_SHA .
+
+      - name: Run platform acceptance tests
+        timeout-minutes: 5
+        run: |
+          mkdir -p test-artifacts
+          docker run --rm --env CI_ARTIFACT_DIR=/workspace/test-artifacts --volume "$GITHUB_WORKSPACE/test-artifacts:/workspace/test-artifacts" fr3-wave-ci:$GITHUB_SHA bash -lc 'source /workspace/install/setup.bash && colcon test && colcon test-result --verbose && /usr/bin/python3 -m pytest -q /workspace/tests/acceptance'
+
+      - name: Build Control PC runtime image
+        run: docker build --file Dockerfile.runtime --tag fr3-wave-runtime:$GITHUB_SHA .
+
+      - name: Verify runtime image contents
+        run: |
+          docker run --rm fr3-wave-runtime:$GITHUB_SHA bash -lc '
+            ros2 pkg executables fr3_wave | grep -F "fr3_wave wave" &&
+            ros2 pkg executables fr3_wave | grep -F "fr3_wave spin" &&
+            ! ros2 pkg prefix mujoco_ros2_control
+          '
+
+      - name: Upload simulation log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: headless-mujoco-log
+          path: test-artifacts/
+          if-no-files-found: ignore

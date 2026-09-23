@@ -1,0 +1,32 @@
+# Runtime image deployed beside the Control PC's ros2_control stack.
+# It contains the ROS 2 application clients only: no MuJoCo, scenes, tests,
+# compilers, or AI model weights.
+FROM ros:jazzy-ros-base-noble AS build
+
+SHELL ["/bin/bash", "-c"]
+WORKDIR /workspace
+
+COPY src/fr3_wave/ src/fr3_wave/
+
+RUN source /opt/ros/jazzy/setup.bash \
+    && colcon build \
+        --merge-install \
+        --packages-select fr3_wave
+
+
+FROM ros:jazzy-ros-core-noble AS runtime
+
+SHELL ["/bin/bash", "-c"]
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-jazzy-rclpy \
+    ros-jazzy-control-msgs \
+    ros-jazzy-trajectory-msgs \
+    ros-jazzy-builtin-interfaces \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /workspace/install/ /opt/fr3_wave/
+COPY docker/runtime-entrypoint.sh /runtime-entrypoint.sh
+
+ENTRYPOINT ["/runtime-entrypoint.sh"]
+CMD ["ros2", "run", "fr3_wave", "wave"]

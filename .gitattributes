@@ -1,0 +1,4 @@
+# Robot geometry and rendered images should not produce textual diffs.
+*.obj binary
+*.stl binary
+*.png binary

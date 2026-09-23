@@ -1,0 +1,36 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 500  # Hz
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    joint_trajectory_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+joint_trajectory_controller:
+  ros__parameters:
+    joints:
+      - fr3v2_joint1
+      - fr3v2_joint2
+      - fr3v2_joint3
+      - fr3v2_joint4
+      - fr3v2_joint5
+      - fr3v2_joint6
+      - fr3v2_joint7
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+      - velocity
+
+    # MuJoCo's position actuators already close the loop (kp/kv in the MJCF),
+    # so the controller just forwards setpoints and does no gain tuning here.
+    allow_partial_joints_goal: false
+    open_loop_control: false
+
+    constraints:
+      stopped_velocity_tolerance: 0.05
+      goal_time: 2.0

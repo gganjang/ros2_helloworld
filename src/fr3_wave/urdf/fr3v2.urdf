@@ -1,0 +1,134 @@
+<?xml version="1.0"?>
+<!--
+  Minimal URDF for ros2_control interface declaration only.
+
+  MuJoCo owns the physics and the true kinematics (see
+  assets/models/franka_fr3_v2/fr3v2.xml); this file exists so
+  controller_manager knows which joints exist and what interfaces they
+  expose. Joint names and limits mirror the MJCF exactly; they must match
+  or the hardware interface binds nothing. Link origins here are
+  placeholders and are NOT the real FR3 kinematics, so TF/RViz poses from
+  robot_state_publisher will be wrong until the real franka_description
+  geometry is dropped in.
+-->
+<robot name="fr3v2">
+
+  <link name="base"/>
+
+  <joint name="fr3v2_joint1" type="revolute">
+    <parent link="base"/>
+    <child link="fr3v2_link1"/>
+    <origin xyz="0 0 0.333" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.7437" upper="2.7437" effort="87" velocity="2.62"/>
+  </joint>
+  <link name="fr3v2_link1"/>
+
+  <joint name="fr3v2_joint2" type="revolute">
+    <parent link="fr3v2_link1"/>
+    <child link="fr3v2_link2"/>
+    <origin xyz="0 0 0" rpy="-1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.7837" upper="1.7837" effort="87" velocity="2.62"/>
+  </joint>
+  <link name="fr3v2_link2"/>
+
+  <joint name="fr3v2_joint3" type="revolute">
+    <parent link="fr3v2_link2"/>
+    <child link="fr3v2_link3"/>
+    <origin xyz="0 -0.316 0" rpy="1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.9007" upper="2.9007" effort="87" velocity="2.62"/>
+  </joint>
+  <link name="fr3v2_link3"/>
+
+  <joint name="fr3v2_joint4" type="revolute">
+    <parent link="fr3v2_link3"/>
+    <child link="fr3v2_link4"/>
+    <origin xyz="0.0825 0 0" rpy="1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.0421" upper="-0.1518" effort="87" velocity="2.62"/>
+  </joint>
+  <link name="fr3v2_link4"/>
+
+  <joint name="fr3v2_joint5" type="revolute">
+    <parent link="fr3v2_link4"/>
+    <child link="fr3v2_link5"/>
+    <origin xyz="-0.0825 0.384 0" rpy="-1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.8065" upper="2.8065" effort="12" velocity="5.26"/>
+  </joint>
+  <link name="fr3v2_link5"/>
+
+  <joint name="fr3v2_joint6" type="revolute">
+    <parent link="fr3v2_link5"/>
+    <child link="fr3v2_link6"/>
+    <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="0.5445" upper="4.5169" effort="12" velocity="4.18"/>
+  </joint>
+  <link name="fr3v2_link6"/>
+
+  <joint name="fr3v2_joint7" type="revolute">
+    <parent link="fr3v2_link6"/>
+    <child link="fr3v2_link7"/>
+    <origin xyz="0.088 0 0" rpy="1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.0159" upper="3.0159" effort="12" velocity="5.26"/>
+  </joint>
+  <link name="fr3v2_link7"/>
+
+  <ros2_control name="fr3v2_mujoco" type="system">
+    <hardware>
+      <plugin>mujoco_ros2_control/MujocoSystemInterface</plugin>
+      <!-- The plugin reads this from the URDF, not from a node parameter. -->
+      <param name="mujoco_model">scene.xml</param>
+      <!-- true runs without the GLFW viewer, so the sim works over SSH. -->
+      <param name="headless">false</param>
+    </hardware>
+
+    <joint name="fr3v2_joint1">
+      <command_interface name="position"/>
+      <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="fr3v2_joint2">
+      <command_interface name="position"/>
+      <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="fr3v2_joint3">
+      <command_interface name="position"/>
+      <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="fr3v2_joint4">
+      <command_interface name="position"/>
+      <state_interface name="position"><param name="initial_value">-1.57079</param></state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="fr3v2_joint5">
+      <command_interface name="position"/>
+      <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="fr3v2_joint6">
+      <command_interface name="position"/>
+      <state_interface name="position"><param name="initial_value">1.57079</param></state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="fr3v2_joint7">
+      <command_interface name="position"/>
+      <state_interface name="position"><param name="initial_value">-0.7853</param></state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+  </ros2_control>
+
+</robot>
