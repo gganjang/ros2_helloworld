@@ -1,7 +1,7 @@
 # Shared FR3 development container
 
-The team development image is
-`harbor.keti.xrds.kr/physical_ai_hub/ros2-fr3-dev:jazzy`. It contains ROS 2
+The team development image is pinned below to the immutable
+`jazzy-0c84c486a85aed0a8cb18114f82ab89b964c0af9` tag. It contains ROS 2
 Jazzy on Ubuntu 24.04, colcon/rosdep, C++ and Python development tools,
 MuJoCo `ros2_control`, the controllers used for FR3 simulation, an
 Apache-2.0 licensed FR3 reference scene, and the core Franka ROS 2 packages
@@ -25,26 +25,68 @@ been verified. The sample app still defaults to the MuJoCo `fr3v2_joint*`
 names; the Franka mock integration check uses its `fr3_joint*` profile. See
 [the sample app guide](../examples/fr3_wave/README.md#franka-fake-hardware-interface-check).
 
-## Use it in this repository
+## Start a new application
 
-The group owner should provide a separate **pull-only** Harbor robot account for
-development servers. Keep the CI robot with push permission in CI secrets.
+The group owner provides developers with **pull-only** Harbor credentials. On
+the remote Ubuntu development server that runs Docker, log in once:
 
-1. Log in to `harbor.keti.xrds.kr` with **pull-only** Harbor credentials on the
-   Ubuntu development server. For example, use `docker login
-   harbor.keti.xrds.kr`; do not put credentials in `devcontainer.json`.
-2. Open this repository on that server with VS Code Remote SSH, then choose
-   **Dev Containers: Reopen in Container**. The configuration at
-   [`.devcontainer/devcontainer.json`](../.devcontainer/devcontainer.json)
-   pulls the shared image and builds the `examples/fr3_wave` sample workspace
-   with `colcon --symlink-install`. Other repositories use their own
-   project-specific devcontainer configuration.
-3. In the container terminal, run `cd examples/fr3_wave` and
-   `source install/setup.bash`. For a headless simulation, run
-   `ros2 launch fr3_wave mujoco.launch.py headless:=true`. The scene path
-   comes from the mounted repository.
+```bash
+docker login harbor.keti.xrds.kr
+```
 
-To check the ROS control interface without a robot, run this in the dev container:
+Create an empty project folder or open the developer's own Git repository. Add
+`.devcontainer/devcontainer.json` with this content (also available as
+[the generic config in this repository](../.devcontainer/devcontainer.json)):
+
+```json
+{
+  "name": "FR3 shared ROS 2 Jazzy development",
+  "image": "harbor.keti.xrds.kr/physical_ai_hub/ros2-fr3-dev:jazzy-0c84c486a85aed0a8cb18114f82ab89b964c0af9",
+  "remoteUser": "ubuntu",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
+}
+```
+
+In VS Code, connect to the development server with Remote SSH, open that
+project folder, and choose **Dev Containers: Reopen in Container**. VS Code
+mounts the folder into the image. The developer can create source files and
+build their own ROS package there. There is no sample-specific
+`postCreateCommand`; the image contains no application source. Keep Harbor
+credentials on the development server, outside the config file.
+
+For a terminal-only start, from an empty or existing project directory on the
+development server:
+
+```bash
+docker run --rm -it \
+  --mount "type=bind,src=$PWD,dst=/workspaces/app" \
+  --workdir /workspaces/app \
+  harbor.keti.xrds.kr/physical_ai_hub/ros2-fr3-dev:jazzy-0c84c486a85aed0a8cb18114f82ab89b964c0af9 \
+  bash
+```
+
+The bind mount keeps application files on the development server. With the
+terminal-only command, ensure the container's `ubuntu` user can write to that
+host directory. VS Code Dev Containers can adjust the container user's UID for
+this case.
+
+## Try the optional sample
+
+Clone this repository only to try `fr3_wave`. Open it with the generic
+configuration above, then in the container terminal run:
+
+```bash
+cd examples/fr3_wave
+colcon build --symlink-install --packages-select fr3_wave
+source install/setup.bash
+ros2 launch fr3_wave mujoco.launch.py headless:=true
+```
+
+The sample uses the reference scene already in the image. See
+[the sample app guide](../examples/fr3_wave/README.md) for its clients and
+acceptance tests.
+
+To check the Franka ROS control interface without a robot, run:
 
 ```bash
 ros2 launch franka_bringup franka.launch.py \
@@ -52,20 +94,34 @@ ros2 launch franka_bringup franka.launch.py \
   load_gripper:=false load_franka_robot_state_broadcaster:=false
 ```
 
-This should start `franka_hardware` through ROS 2 mock components and activate
+This starts `franka_hardware` through ROS 2 mock components and activates
 `joint_state_broadcaster`. It checks package loading and controller wiring. It
 does not open an FCI connection, establish firmware compatibility, meet real-time
 timing, or move an arm. Stop the launch with Ctrl-C.
 
-Each developer repository can use the same image in its own `devcontainer.json`
-and add project-specific setup there. A tag `jazzy-<commit SHA>` is also
-published for an exact, reproducible base version; use that tag when pinning a
-project. The `jazzy` tag follows the most recently published base.
+## Keep development and runtime compatible
+
+This published dev image fixes Ubuntu 24.04, ROS 2 Jazzy, Python 3.12, and its
+installed Franka/MuJoCo packages for the team. The shared dev image **does not
+provide CUDA**. Installing packages interactively with `sudo` changes only one
+developer's container; record project dependencies in a Dockerfile or other
+versioned dependency files and build them in CI.
+
+Each application needs its own tested runtime image for the Control PC. Its
+runtime Dockerfile must include the application's code and pinned runtime
+dependencies. Developers who need CUDA add the required CUDA user-space
+libraries to their own runtime image. If they also need CUDA while developing,
+they can define a project-specific dev image based on the shared image; that
+does not change the team's base. CI should build and test the runtime image
+before publishing it to Harbor. The Control PC supplies a compatible NVIDIA
+driver, GPU, real-time and network infrastructure. A common dev base alone
+does not guarantee runtime compatibility, and the current `fr3_wave` runtime
+has not been validated with a physical arm.
 
 ## Share the workspace with Samba
 
 Samba is installed but does not start automatically. To make the share reachable
-from another machine, add a port mapping to this repository's
+from another machine, add a port mapping to the project's
 `.devcontainer/devcontainer.json` **before** reopening the container. Bind to
 an address on the trusted development network, for example:
 
@@ -79,7 +135,7 @@ must be stopped or a different host arrangement chosen. Limit access to the
 trusted network with the server firewall. The shared image does not publish a
 port by itself.
 
-In the dev container terminal, run this from the repository root:
+In the dev container terminal, run this from the project directory to share:
 
 ```bash
 start-samba-share "$PWD"

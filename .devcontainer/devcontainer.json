@@ -1,10 +1,6 @@
 {
-  "name": "FR3 wave sample (shared Jazzy dev image)",
+  "name": "FR3 shared ROS 2 Jazzy development",
   "image": "harbor.keti.xrds.kr/physical_ai_hub/ros2-fr3-dev:jazzy-0c84c486a85aed0a8cb18114f82ab89b964c0af9",
   "remoteUser": "ubuntu",
-  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-  "containerEnv": {
-    "FR3_MUJOCO_SCENE": "${containerWorkspaceFolder}/assets/models/franka_fr3_v2/scene.xml"
-  },
-  "postCreateCommand": "bash -lc 'source /opt/ros/jazzy/setup.bash && cd examples/fr3_wave && colcon build --symlink-install --packages-select fr3_wave'"
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
 }
