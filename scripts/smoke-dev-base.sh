@@ -8,6 +8,14 @@ test "$(id -un)" = ubuntu
 sudo -n true
 command -v colcon
 command -v rosdep
+command -v tmux
+command -v rg
+command -v jq
+command -v nano
+command -v vim.tiny
+command -v ip
+command -v ping
+command -v ps
 ros2 pkg prefix mujoco_ros2_control
 ros2 pkg prefix joint_trajectory_controller
 ros2 pkg prefix franka_msgs

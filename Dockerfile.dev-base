@@ -86,6 +86,22 @@ RUN mkdir -p /opt/franka_ws/src \
     && chown -R ubuntu:ubuntu /opt/franka_ws \
     && printf '\nsource /opt/franka_ws/install/setup.bash\n' >> /home/ubuntu/.bashrc
 
+# Interactive tools are a separate layer so changes do not rebuild Franka.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    htop \
+    iproute2 \
+    iputils-ping \
+    jq \
+    less \
+    lsof \
+    nano \
+    procps \
+    ripgrep \
+    tmux \
+    tree \
+    vim-tiny \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY assets/models/franka_fr3_v2/ /opt/franka/fr3v2/
 ENV FR3_MUJOCO_SCENE=/opt/franka/fr3v2/scene.xml
 

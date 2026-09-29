@@ -6,7 +6,9 @@ Jazzy on Ubuntu 24.04, colcon/rosdep, C++ and Python development tools,
 MuJoCo `ros2_control`, the controllers used for FR3 simulation, an
 Apache-2.0 licensed FR3 reference scene, and the core Franka ROS 2 packages
 (`franka_msgs`, `franka_hardware`, `franka_bringup`, and `franka_description`).
-It runs as the non-root `ubuntu` user.
+It also has `tmux`, `nano`, Vim, `rg`, `jq`, `less`, `tree`, `htop`, and
+basic process/network diagnostics (`ps`, `ip`, `ping`, `lsof`). It runs as the
+non-root `ubuntu` user.
 Application source, project-specific scenes, model weights, and credentials
 are not baked into this shared image.
 
