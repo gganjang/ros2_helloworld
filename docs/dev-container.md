@@ -3,17 +3,22 @@
 The team development image is
 `harbor.keti.xrds.kr/physical_ai_hub/ros2-fr3-dev:jazzy`. It contains ROS 2
 Jazzy on Ubuntu 24.04, colcon/rosdep, C++ and Python development tools,
-MuJoCo `ros2_control`, the controllers used for FR3 simulation, and an
-Apache-2.0 licensed FR3 reference scene. It runs as the non-root `ubuntu` user.
+MuJoCo `ros2_control`, the controllers used for FR3 simulation, an
+Apache-2.0 licensed FR3 reference scene, and the core Franka ROS 2 packages
+(`franka_msgs`, `franka_hardware`, `franka_bringup`, and `franka_description`).
+It runs as the non-root `ubuntu` user.
 Application source, project-specific scenes, model weights, and credentials
 are not baked into this shared image.
 
-The full `franka_ros2`/`libfranka` hardware stack is a separate runtime-image
-concern in the planned platform: the Control PC host supplies real-time and
-driver infrastructure, while the experiment's runtime container supplies
-robot-control software. This dev base
-supports local FR3 simulation and ROS client development; it does not certify
-real-robot control.
+The Franka packages come from `franka_ros2` v3.5.3, with `libfranka` 0.20.5
+and `franka_description` 2.9.0. These pinned versions let developers build
+against Franka APIs and start the ROS controller stack with fake hardware.
+Other upstream packages, including gripper, examples, MoveIt, and Gazebo
+integration, are outside this base. Optional RViz and joystick/teleoperation
+dependencies are also omitted from the shared headless image. The future
+runtime image must contain the packages its application needs. The Control PC
+host will provide the real-time, network, and driver infrastructure. No robot or firmware compatibility has yet
+been verified.
 
 ## Use it in this repository
 
@@ -32,6 +37,19 @@ development servers. Keep the CI robot with push permission in CI secrets.
    headless simulation, run `ros2 launch fr3_wave mujoco.launch.py
    headless:=true`. The scene path comes from the mounted repository.
 
+To check the ROS control interface without a robot, run this in the dev container:
+
+```bash
+ros2 launch franka_bringup franka.launch.py \
+  robot_type:=fr3 robot_ip:=dont-care use_fake_hardware:=true \
+  load_gripper:=false load_franka_robot_state_broadcaster:=false
+```
+
+This should start `franka_hardware` through ROS 2 mock components and activate
+`joint_state_broadcaster`. It checks package loading and controller wiring. It
+does not open an FCI connection, establish firmware compatibility, meet real-time
+timing, or move an arm. Stop the launch with Ctrl-C.
+
 Each developer repository can use the same image in its own `devcontainer.json`
 and add project-specific setup there. A tag `jazzy-<commit SHA>` is also
 published for an exact, reproducible base version; use that tag when pinning a
@@ -40,10 +58,11 @@ project. The `jazzy` tag follows the most recently published base.
 ## Maintain the image
 
 `Dockerfile.dev-base` is the prototype source in this repository. On changes to
-that file or the bundled FR3 model assets, [the GitHub workflow](../.github/workflows/dev-base.yml) builds the
-image with BuildKit, checks ROS and MuJoCo tools, and pushes both tags to Harbor
-only after the smoke test. It uses the existing `HARBOR_USERNAME` and
-`HARBOR_PASSWORD` GitHub Actions secrets. To build locally:
+that file or the bundled FR3 model assets,
+[the GitHub workflow](../.github/workflows/dev-base.yml) builds the image with
+BuildKit, checks ROS, MuJoCo, Franka packages, and fake-hardware launch, then
+pushes both tags to Harbor only after the smoke test. It uses the existing
+`HARBOR_USERNAME` and `HARBOR_PASSWORD` GitHub Actions secrets. To build locally:
 
 ```bash
 docker build -f Dockerfile.dev-base -t ros2-fr3-dev:local .

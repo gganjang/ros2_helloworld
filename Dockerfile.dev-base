@@ -1,4 +1,4 @@
-# Shared ROS 2 Jazzy development environment for FR3 simulation projects.
+# Shared ROS 2 Jazzy development environment for FR3 simulation and hardware software.
 # Application source and runtime deployments belong to each repository.
 FROM ros:jazzy-ros-base-noble
 
@@ -33,6 +33,58 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && printf '\nsource /opt/ros/jazzy/setup.bash\n' >> /home/ubuntu/.bashrc \
     && mkdir -p /workspaces \
     && chown ubuntu:ubuntu /workspaces
+
+# Franka ROS 2 v3.5.3 pairs with libfranka 0.20.5 and description 2.9.0.
+# This pins development APIs; compatibility with the eventual robot system
+# version must be checked before any real-hardware deployment.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    libeigen3-dev \
+    libfmt-dev \
+    libpoco-dev \
+    ros-jazzy-ament-cmake-python \
+    ros-jazzy-joint-state-publisher \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL \
+      https://github.com/frankarobotics/libfranka/releases/download/0.20.5/libfranka_0.20.5_noble_amd64.deb \
+      -o /tmp/libfranka_0.20.5_noble_amd64.deb \
+    && printf '%s  %s\n' \
+      f341fe453c0d5793148faf1f77946bc0ccafed38a2e08d844c5a1f1c9bf3b0d1 \
+      /tmp/libfranka_0.20.5_noble_amd64.deb | sha256sum -c - \
+    && apt-get update \
+    && apt-get install -y /tmp/libfranka_0.20.5_noble_amd64.deb \
+    && rm -rf /var/lib/apt/lists/* /tmp/libfranka_0.20.5_noble_amd64.deb
+
+RUN mkdir -p /opt/franka_ws/src \
+    && git clone --depth 1 --branch v3.5.3 \
+      https://github.com/frankarobotics/franka_ros2.git /tmp/franka_ros2 \
+    && test "$(git -C /tmp/franka_ros2 rev-parse HEAD)" = \
+      6cedf7f1a2ca280c433f643eae697be23eb2a15e \
+    && git clone --depth 1 --branch 2.9.0 \
+      https://github.com/frankarobotics/franka_description.git \
+      /opt/franka_ws/src/franka_description \
+    && test "$(git -C /opt/franka_ws/src/franka_description rev-parse HEAD)" = \
+      7aeeddc449edf8d62b594f9e36a81da53e7796f9 \
+    && cp -a /tmp/franka_ros2/franka_msgs \
+      /tmp/franka_ros2/franka_hardware \
+      /tmp/franka_ros2/franka_bringup /opt/franka_ws/src/ \
+    && cp /tmp/franka_ros2/LICENSE /opt/franka_ws/LICENSE.franka_ros2 \
+    && rm -rf /tmp/franka_ros2 \
+    && rosdep update \
+    && apt-get update \
+    && rosdep install --from-paths /opt/franka_ws/src --ignore-src \
+      --rosdistro jazzy -y \
+      -t build -t buildtool -t build_export -t buildtool_export -t exec \
+      --skip-keys='libfranka franka_example_controllers franka_mobile franka_robot_state_broadcaster franka_gripper rviz2 joy teleop_twist_joy teleop_twist_keyboard' \
+    && rm -rf /var/lib/apt/lists/* \
+    && source /opt/ros/jazzy/setup.bash \
+    && cd /opt/franka_ws \
+    && colcon build --merge-install --parallel-workers 2 \
+      --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF \
+    && chown -R ubuntu:ubuntu /opt/franka_ws \
+    && printf '\nsource /opt/franka_ws/install/setup.bash\n' >> /home/ubuntu/.bashrc
 
 COPY assets/models/franka_fr3_v2/ /opt/franka/fr3v2/
 ENV FR3_MUJOCO_SCENE=/opt/franka/fr3v2/scene.xml

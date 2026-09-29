@@ -7,6 +7,7 @@ on:
       - Dockerfile.dev-base
       - assets/models/franka_fr3_v2/**
       - .github/workflows/dev-base.yml
+      - scripts/smoke-dev-base.sh
   workflow_dispatch:
 
 permissions:
@@ -27,18 +28,10 @@ jobs:
           tags: ros2-fr3-dev:${{ github.sha }}
           load: true
           push: false
-      - name: Smoke test development tools and simulator
+      - name: Smoke test simulator and Franka fake hardware
         run: |
-          docker run --rm "ros2-fr3-dev:$GITHUB_SHA" bash -lc '
-            test "$(id -un)" = ubuntu &&
-            sudo -n true &&
-            command -v colcon &&
-            command -v rosdep &&
-            ros2 pkg prefix mujoco_ros2_control &&
-            ros2 pkg prefix joint_trajectory_controller &&
-            test -f "$FR3_MUJOCO_SCENE" &&
-            python3 -c "import rclpy"
-          '
+          docker run --rm -v "$PWD/scripts:/smoke:ro" \
+            "ros2-fr3-dev:$GITHUB_SHA" bash /smoke/smoke-dev-base.sh
       - name: Publish tested image to Harbor
         if: github.ref == 'refs/heads/main'
         env:
