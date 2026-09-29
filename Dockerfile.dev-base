@@ -97,11 +97,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nano \
     procps \
     ripgrep \
+    samba \
+    smbclient \
     tmux \
     tree \
     vim-tiny \
     && rm -rf /var/lib/apt/lists/*
 
+COPY --chmod=0755 scripts/start-samba-share.sh /usr/local/bin/start-samba-share
 COPY assets/models/franka_fr3_v2/ /opt/franka/fr3v2/
 ENV FR3_MUJOCO_SCENE=/opt/franka/fr3v2/scene.xml
 

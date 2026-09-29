@@ -7,8 +7,9 @@ MuJoCo `ros2_control`, the controllers used for FR3 simulation, an
 Apache-2.0 licensed FR3 reference scene, and the core Franka ROS 2 packages
 (`franka_msgs`, `franka_hardware`, `franka_bringup`, and `franka_description`).
 It also has `tmux`, `nano`, Vim, `rg`, `jq`, `less`, `tree`, `htop`, and
-basic process/network diagnostics (`ps`, `ip`, `ping`, `lsof`). It runs as the
-non-root `ubuntu` user.
+basic process/network diagnostics (`ps`, `ip`, `ping`, `lsof`). Samba server
+and client tools are installed for sharing a development workspace. It runs as
+the non-root `ubuntu` user.
 Application source, project-specific scenes, model weights, and credentials
 are not baked into this shared image.
 
@@ -58,6 +59,38 @@ Each developer repository can use the same image in its own `devcontainer.json`
 and add project-specific setup there. A tag `jazzy-<commit SHA>` is also
 published for an exact, reproducible base version; use that tag when pinning a
 project. The `jazzy` tag follows the most recently published base.
+
+## Share the workspace with Samba
+
+Samba is installed but does not start automatically. To make the share reachable
+from another machine, add a port mapping to this repository's
+`.devcontainer/devcontainer.json` **before** reopening the container. Bind to
+an address on the trusted development network, for example:
+
+```json
+"runArgs": ["--publish", "10.0.0.15:445:445"]
+```
+
+Replace `10.0.0.15` with the development server's own private IP. Docker must
+be able to bind TCP 445 on that server; a host Samba service using the port
+must be stopped or a different host arrangement chosen. Limit access to the
+trusted network with the server firewall. The shared image does not publish a
+port by itself.
+
+In the dev container terminal, run this from the repository root:
+
+```bash
+start-samba-share "$PWD"
+```
+
+The script creates the authenticated `workspace` share for that directory,
+asks for a Samba password for the container's `ubuntu` user, and starts `smbd`.
+It does not enable guest access or save the password in the repository. Connect
+from another machine to `//10.0.0.15/workspace` (or
+`\\10.0.0.15\workspace` on Windows) as `ubuntu` with that Samba password.
+The share permits writes as the container's `ubuntu` user. Run the setup again
+if the container is recreated, since its Samba account database is stored in
+the container filesystem.
 
 ## Maintain the image
 

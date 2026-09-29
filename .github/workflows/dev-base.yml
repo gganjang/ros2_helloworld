@@ -8,6 +8,7 @@ on:
       - assets/models/franka_fr3_v2/**
       - .github/workflows/dev-base.yml
       - scripts/smoke-dev-base.sh
+      - scripts/start-samba-share.sh
   workflow_dispatch:
 
 permissions:
