@@ -1,42 +1,76 @@
-name: Headless MuJoCo acceptance
+name: ROS package, acceptance, and runtime
 
 on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
-  acceptance:
+  package-test:
     runs-on: ubuntu-24.04
+    container: ros:jazzy-ros-base-noble
+    env:
+      DEBIAN_FRONTEND: noninteractive
     steps:
       - uses: actions/checkout@v4
+      - name: Install package test dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            python3-pytest \
+            ros-jazzy-rclpy \
+            ros-jazzy-control-msgs \
+            ros-jazzy-trajectory-msgs \
+            ros-jazzy-builtin-interfaces
+      - name: Build and test ROS package
+        shell: bash
+        run: |
+          set -e
+          source /opt/ros/jazzy/setup.bash
+          colcon build --packages-select fr3_wave
+          source install/setup.bash
+          colcon test --packages-select fr3_wave
+          colcon test-result --verbose
 
+  headless-acceptance:
+    needs: package-test
+    runs-on: ubuntu-24.04
+    container: ros:jazzy-ros-base-noble
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v4
       - name: Verify MuJoCo CPU requirements
         run: |
           if ! grep -qw avx /proc/cpuinfo; then
             echo "ERROR: MuJoCo requires an x86-64 runner with AVX exposed."
             exit 1
           fi
-
-      - name: Build developer and test image
-        run: docker build --tag fr3-wave-ci:$GITHUB_SHA .
-
+      - name: Install acceptance test dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            python3-pytest \
+            ros-jazzy-mujoco-ros2-control \
+            ros-jazzy-joint-trajectory-controller \
+            ros-jazzy-joint-state-broadcaster \
+            ros-jazzy-robot-state-publisher \
+            ros-jazzy-control-msgs \
+            ros-jazzy-trajectory-msgs \
+            ros-jazzy-sensor-msgs
       - name: Run platform acceptance tests
         timeout-minutes: 5
+        shell: bash
         run: |
+          set -e
           mkdir -p test-artifacts
-          docker run --rm --env CI_ARTIFACT_DIR=/workspace/test-artifacts --volume "$GITHUB_WORKSPACE/test-artifacts:/workspace/test-artifacts" fr3-wave-ci:$GITHUB_SHA bash -lc 'source /workspace/install/setup.bash && colcon test && colcon test-result --verbose && /usr/bin/python3 -m pytest -q /workspace/tests/acceptance'
-
-      - name: Build Control PC runtime image
-        run: docker build --file Dockerfile.runtime --tag fr3-wave-runtime:$GITHUB_SHA .
-
-      - name: Verify runtime image contents
-        run: |
-          docker run --rm fr3-wave-runtime:$GITHUB_SHA bash -lc '
-            ros2 pkg executables fr3_wave | grep -F "fr3_wave wave" &&
-            ros2 pkg executables fr3_wave | grep -F "fr3_wave spin" &&
-            ! ros2 pkg prefix mujoco_ros2_control
-          '
-
+          export CI_ARTIFACT_DIR="$GITHUB_WORKSPACE/test-artifacts"
+          source /opt/ros/jazzy/setup.bash
+          colcon build --packages-select fr3_wave
+          source install/setup.bash
+          /usr/bin/python3 -m pytest -q tests/acceptance
       - name: Upload simulation log
         if: always()
         uses: actions/upload-artifact@v4
@@ -44,3 +78,27 @@ jobs:
           name: headless-mujoco-log
           path: test-artifacts/
           if-no-files-found: ignore
+
+  runtime-image:
+    needs: headless-acceptance
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up BuildKit
+        uses: docker/setup-buildx-action@v3
+      - name: Build runtime image for local testing
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.runtime
+          tags: fr3-wave-runtime:${{ github.sha }}
+          load: true
+          push: false
+      - name: Smoke test runtime image
+        run: |
+          docker run --rm "fr3-wave-runtime:$GITHUB_SHA" bash -lc '
+            ros2 pkg executables fr3_wave | grep -F "fr3_wave wave" &&
+            ros2 pkg executables fr3_wave | grep -F "fr3_wave spin" &&
+            python3 -c "import fr3_wave.wave; import fr3_wave.spin" &&
+            ! ros2 pkg prefix mujoco_ros2_control
+          '

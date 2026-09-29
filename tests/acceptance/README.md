@@ -23,7 +23,9 @@ separate stages. On the default branch, it builds the runtime image with
 rootless BuildKit, pushes a commit-tagged candidate to Harbor, runs a smoke
 test from that exact image, and promotes it to the final runtime tag only after
 the smoke test passes. See [the CI setup guide](../../docs/gitlab-harbor.md)
-for Harbor access. A matching GitHub Actions workflow supports GitHub mirrors.
+for Harbor access. The GitHub Actions workflow runs the same ROS tests as
+separate jobs, then builds and smoke tests the runtime image locally with
+BuildKit. It does not need Harbor credentials or publish an image.
 Configure the repository branch rules to require the `headless-acceptance` job
 before merging; the workflow alone does not enforce a merge gate.
 
