@@ -1,13 +1,14 @@
-# Platform acceptance tests
+# FR3 wave sample acceptance tests
 
-These tests belong to the platform. They start one real headless MuJoCo
+These tests belong to the `fr3_wave` sample. They start one real headless MuJoCo
 simulation, run both ROS 2 clients, inspect measured joint states, and verify
 that a second trajectory goal preempts the first. A client log message alone
 cannot satisfy the motion checks.
 
-Run from the repository root after building `fr3_wave`:
+From the repository root, enter the sample workspace and run:
 
 ```bash
+cd examples/fr3_wave
 source /opt/ros/jazzy/setup.bash
 colcon build --packages-select fr3_wave
 source install/setup.bash
@@ -18,15 +19,12 @@ Use the system Python that matches the installed ROS 2 distribution. The test
 assigns a separate ROS domain and writes the simulator log to a temporary
 directory, or to `CI_ARTIFACT_DIR` when that variable is set.
 
-The GitLab pipeline runs ROS package tests and headless acceptance tests in
-separate stages. On the default branch, it builds the runtime image with
-rootless BuildKit, pushes a commit-tagged candidate to Harbor, runs a smoke
-test from that exact image, and promotes it to the final runtime tag only after
-the smoke test passes. See [the CI setup guide](../../docs/gitlab-harbor.md)
-for Harbor access. The GitHub Actions workflow runs the same ROS tests as
-separate jobs, then builds and smoke tests the runtime image locally with
-BuildKit. On pushes to `main`, it publishes that tested image to Harbor as
-`runtime-<commit SHA>` after the smoke test. Set the `HARBOR_USERNAME` and
+GitHub Actions is the active CI while the GitLab runner is being repaired. It
+runs the ROS package, headless MuJoCo, and Franka fake-hardware checks as
+separate jobs. On pushes to `main`, it builds and smoke-tests the sample runtime
+image, then publishes `runtime-<commit SHA>` to Harbor. The GitLab pipeline
+retains its staged BuildKit candidate/smoke/promotion flow for later use; see
+[the CI setup guide](../../../../docs/gitlab-harbor.md). Set the `HARBOR_USERNAME` and
 `HARBOR_PASSWORD` GitHub Actions repository secrets to the Harbor robot account
 credentials; pull requests run the tests without those secrets.
 Configure the repository branch rules to require the `headless-acceptance` job

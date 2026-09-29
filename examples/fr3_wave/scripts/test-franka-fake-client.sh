@@ -17,7 +17,7 @@ cleanup() {
 trap cleanup EXIT
 
 mkdir -p "$work_dir/ws/src"
-cp -a /repo/src/fr3_wave "$work_dir/ws/src/"
+cp -a /repo/examples/fr3_wave/src/fr3_wave "$work_dir/ws/src/"
 cd "$work_dir/ws"
 colcon build --packages-select fr3_wave
 source install/setup.bash

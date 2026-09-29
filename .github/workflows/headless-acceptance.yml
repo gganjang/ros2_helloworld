@@ -29,6 +29,7 @@ jobs:
         run: |
           set -e
           source /opt/ros/jazzy/setup.bash
+          cd examples/fr3_wave
           colcon build --packages-select fr3_wave
           source install/setup.bash
           colcon test --packages-select fr3_wave
@@ -68,6 +69,7 @@ jobs:
           mkdir -p test-artifacts
           export CI_ARTIFACT_DIR="$GITHUB_WORKSPACE/test-artifacts"
           source /opt/ros/jazzy/setup.bash
+          cd examples/fr3_wave
           colcon build --packages-select fr3_wave
           source install/setup.bash
           /usr/bin/python3 -m pytest -q tests/acceptance
@@ -98,7 +100,7 @@ jobs:
         run: |
           docker pull "$DEV_IMAGE"
           docker run --rm -v "$PWD:/repo:ro" "$DEV_IMAGE" \
-            bash /repo/scripts/test-franka-fake-client.sh
+            bash /repo/examples/fr3_wave/scripts/test-franka-fake-client.sh
 
   runtime-image:
     needs: [headless-acceptance, franka-fake-acceptance]
@@ -112,7 +114,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile.runtime
+          file: examples/fr3_wave/Dockerfile.runtime
           tags: fr3-wave-runtime:${{ github.sha }}
           load: true
           push: false

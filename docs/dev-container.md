@@ -23,7 +23,7 @@ runtime image must contain the packages its application needs. The Control PC
 host will provide the real-time, network, and driver infrastructure. No robot or firmware compatibility has yet
 been verified. The sample app still defaults to the MuJoCo `fr3v2_joint*`
 names; the Franka mock integration check uses its `fr3_joint*` profile. See
-[the app guide](../src/fr3_wave/README.md#franka-fake-hardware-interface-check).
+[the sample app guide](../examples/fr3_wave/README.md#franka-fake-hardware-interface-check).
 
 ## Use it in this repository
 
@@ -36,11 +36,13 @@ development servers. Keep the CI robot with push permission in CI secrets.
 2. Open this repository on that server with VS Code Remote SSH, then choose
    **Dev Containers: Reopen in Container**. The configuration at
    [`.devcontainer/devcontainer.json`](../.devcontainer/devcontainer.json)
-   pulls the shared image, mounts the repository, and builds `fr3_wave` with
-   `colcon --symlink-install`.
-3. In the container terminal, run `source install/setup.bash`, then, for a
-   headless simulation, run `ros2 launch fr3_wave mujoco.launch.py
-   headless:=true`. The scene path comes from the mounted repository.
+   pulls the shared image and builds the `examples/fr3_wave` sample workspace
+   with `colcon --symlink-install`. Other repositories use their own
+   project-specific devcontainer configuration.
+3. In the container terminal, run `cd examples/fr3_wave` and
+   `source install/setup.bash`. For a headless simulation, run
+   `ros2 launch fr3_wave mujoco.launch.py headless:=true`. The scene path
+   comes from the mounted repository.
 
 To check the ROS control interface without a robot, run this in the dev container:
 

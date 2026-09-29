@@ -1,4 +1,4 @@
-# Shared FR3 development and headless acceptance environment.
+# Sample FR3 application development and headless acceptance environment.
 # AI model weights are deliberately supplied outside this image.
 FROM ros:jazzy-ros-base-noble
 
@@ -15,10 +15,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-jazzy-sensor-msgs \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /workspace
-COPY src/ src/
-COPY assets/models/franka_fr3_v2/ assets/models/franka_fr3_v2/
-COPY tests/ tests/
+WORKDIR /workspace/examples/fr3_wave
+COPY examples/fr3_wave/src/ src/
+COPY assets/models/franka_fr3_v2/ /workspace/assets/models/franka_fr3_v2/
+COPY examples/fr3_wave/tests/ tests/
 
 RUN source /opt/ros/jazzy/setup.bash \
     && colcon build

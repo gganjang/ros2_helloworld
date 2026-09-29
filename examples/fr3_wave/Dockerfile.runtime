@@ -1,4 +1,4 @@
-# Runtime image deployed beside the Control PC's ros2_control stack.
+# Client-only sample runtime image; real-robot deployment is not validated.
 # It contains the ROS 2 application clients only: no MuJoCo, scenes, tests,
 # compilers, or AI model weights.
 FROM ros:jazzy-ros-base-noble AS build
@@ -6,7 +6,7 @@ FROM ros:jazzy-ros-base-noble AS build
 SHELL ["/bin/bash", "-c"]
 WORKDIR /workspace
 
-COPY src/fr3_wave/ src/fr3_wave/
+COPY examples/fr3_wave/src/fr3_wave/ src/fr3_wave/
 
 RUN source /opt/ros/jazzy/setup.bash \
     && colcon build \
@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /workspace/install/ /opt/fr3_wave/
-COPY docker/runtime-entrypoint.sh /runtime-entrypoint.sh
+COPY examples/fr3_wave/docker/runtime-entrypoint.sh /runtime-entrypoint.sh
 
 # Verify the final runtime filesystem before BuildKit exports or pushes it.
 RUN source /opt/ros/jazzy/setup.bash \

@@ -14,7 +14,7 @@ from rclpy.action import ActionClient
 from rclpy.executors import SingleThreadedExecutor
 from sensor_msgs.msg import JointState
 
-REPO = Path(__file__).resolve().parents[2]
+REPO = Path(__file__).resolve().parents[4]
 SCENE = REPO / 'assets/models/franka_fr3_v2/scene.xml'
 ACTION = 'joint_trajectory_controller/follow_joint_trajectory'
 JOINT_1 = 'fr3v2_joint1'

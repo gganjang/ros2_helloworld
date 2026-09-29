@@ -1,4 +1,7 @@
-# Two ROS 2 clients, one MuJoCo controller
+# FR3 wave sample: two ROS 2 clients, one MuJoCo controller
+
+This workspace is an example application. The shared development image is
+maintained at the repository root and contains no `fr3_wave` source.
 
 `mujoco.launch.py` starts one FR3 MuJoCo simulation and one
 `joint_trajectory_controller`. It does not start an application client.
@@ -13,10 +16,12 @@ joint limit does not permit continuous 360-degree rotation.
 From the repository root:
 
 ```bash
+cd examples/fr3_wave
 source /opt/ros/jazzy/setup.bash
 colcon build --packages-select fr3_wave
 source install/setup.bash
-ros2 launch fr3_wave mujoco.launch.py scene:=$PWD/assets/models/franka_fr3_v2/scene.xml headless:=false
+export FR3_MUJOCO_SCENE="$(realpath ../../assets/models/franka_fr3_v2/scene.xml)"
+ros2 launch fr3_wave mujoco.launch.py scene:="$FR3_MUJOCO_SCENE" headless:=false
 ```
 
 In another terminal, source the same ROS environment and run either client:
@@ -63,10 +68,10 @@ MuJoCo names by default. For the Franka profile, set `joint_prefix:=fr3`; `wave`
 also needs `wave_joint:=fr3_joint5` (or another FR3 joint name).
 
 The shared dev image contains Franka's core ROS packages and `libfranka`. Run
-`/repo/scripts/test-franka-fake-client.sh` in that image with this repository
+`/repo/examples/fr3_wave/scripts/test-franka-fake-client.sh` in that image with this repository
 mounted at `/repo` to build the app, start Franka fake hardware, load a
-`joint_trajectory_controller`, and send short `wave` and `spin` goals. GitHub CI runs this
-check on the main branch before publishing the app runtime image. Franka's
+`joint_trajectory_controller`, and send short `wave` and `spin` goals. GitHub CI runs
+this check on the main branch before publishing the app runtime image. Franka's
 standard bringup does not load this sample trajectory controller by itself.
 
 This check confirms ROS joint naming, action wiring, and controller activation.
@@ -79,36 +84,37 @@ before any physical motion.
 
 ## Docker and CI
 
-Build the shared developer/test image from the repository root:
+Build this sample's developer/test image from the repository root:
 
 ```bash
-docker build -t fr3-wave-dev .
+docker build -f examples/fr3_wave/Dockerfile.dev -t fr3-wave-dev .
 docker run --rm -it --name fr3-dev fr3-wave-dev bash
 ```
 
 Inside the container, start the simulator. The scene is included in the image:
 
 ```bash
-source /workspace/install/setup.bash
+source /workspace/examples/fr3_wave/install/setup.bash
 ros2 launch fr3_wave mujoco.launch.py headless:=true
 ```
 
 In a second host terminal, run either application in that same container:
 
 ```bash
-docker exec -it fr3-dev bash -lc 'source /workspace/install/setup.bash && ros2 run fr3_wave wave'
-docker exec -it fr3-dev bash -lc 'source /workspace/install/setup.bash && ros2 run fr3_wave spin'
+docker exec -it fr3-dev bash -lc 'source /workspace/examples/fr3_wave/install/setup.bash && ros2 run fr3_wave wave'
+docker exec -it fr3-dev bash -lc 'source /workspace/examples/fr3_wave/install/setup.bash && ros2 run fr3_wave spin'
 ```
 
 The Docker image contains ROS 2, MuJoCo, the FR3 simulation assets, and the
 project code. It contains no AI model weights. GUI mode requires a host display
 connection; the headless commands above work without one.
 
-The GitLab pipeline runs ROS package tests and headless MuJoCo acceptance
-tests in separate stages, then builds, smoke-tests, and publishes the runtime
-image through Harbor. The [shared dev container guide](../../docs/dev-container.md)
-explains the reusable team base image; the bundled image above remains a
-project-specific test environment. See [the acceptance test guide](../../tests/acceptance/README.md).
+GitHub Actions currently runs package, MuJoCo, and Franka fake-hardware
+acceptance jobs before publishing the sample runtime image to Harbor. The
+GitLab pipeline is retained for when its runner environment is repaired.
+The [shared dev container guide](../../docs/dev-container.md) explains the
+reusable team base image; the bundled image above is specific to this sample.
+See [the acceptance test guide](tests/acceptance/README.md).
 
 ## Client-only runtime prototype
 
@@ -116,7 +122,7 @@ After the headless acceptance tests pass, CI builds a smaller image containing
 only the installed ROS 2 application clients and their runtime dependencies:
 
 ```bash
-docker build -f Dockerfile.runtime -t fr3-wave-runtime .
+docker build -f examples/fr3_wave/Dockerfile.runtime -t fr3-wave-runtime .
 ```
 
 The default command runs `wave`:
