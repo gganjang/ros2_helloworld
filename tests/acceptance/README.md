@@ -22,8 +22,8 @@ The GitLab pipeline uses rootless BuildKit to build and push the development/tes
 image to the GitLab container registry. A separate job runs package tests and
 these acceptance tests in that image. After they pass, another BuildKit job
 builds the Control PC runtime image and a final job checks it. This requires
-the project container registry and a runner that permits rootless BuildKit's
-user namespace and mount operations. A matching GitHub Actions workflow
+the project container registry to be enabled and a runner that permits
+rootless BuildKit's user namespace and mount operations. A matching GitHub Actions workflow
 supports GitHub mirrors.
 Configure the repository branch rules to require the `headless-acceptance` job before
 merging; the workflow alone does not enforce a merge gate.

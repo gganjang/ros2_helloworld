@@ -13,6 +13,9 @@ stages:
     BUILDKITD_FLAGS: --oci-worker-no-process-sandbox --config /tmp/buildkitd.toml
   before_script:
     - |
+      : "${CI_REGISTRY_IMAGE:?Enable the GitLab Container Registry for this project before building images}"
+      : "${CI_REGISTRY_USER:?GitLab Container Registry credentials are unavailable}"
+      : "${CI_REGISTRY_PASSWORD:?GitLab Container Registry credentials are unavailable}"
       mkdir -p "$HOME/.docker"
       auth="$(printf '%s:%s' "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" | base64 | tr -d '\n')"
       printf '{"auths":{"%s":{"auth":"%s"}}}\n' "$CI_REGISTRY" "$auth" > "$HOME/.docker/config.json"
