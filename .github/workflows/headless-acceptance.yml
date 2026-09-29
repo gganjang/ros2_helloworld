@@ -96,7 +96,7 @@ jobs:
             --username "$HARBOR_USERNAME" --password-stdin
       - name: Pull tested dev image and run sample app with Franka fake hardware
         env:
-          DEV_IMAGE: harbor.keti.xrds.kr/physical_ai_hub/ros2-fr3-dev:jazzy-a5003ecb9356a8377e46f23f87eccc61a68c5a0c
+          DEV_IMAGE: harbor.keti.xrds.kr/physical_ai_hub/ros2-fr3-dev:jazzy-17887f598440ce4106c1bbd068d04ee560fd9709
         run: |
           docker pull "$DEV_IMAGE"
           docker run --rm -v "$PWD:/repo:ro" "$DEV_IMAGE" \

@@ -1,7 +1,7 @@
 # Shared FR3 development container
 
 The team development image is pinned below to the immutable
-`jazzy-a5003ecb9356a8377e46f23f87eccc61a68c5a0c` tag. It contains ROS 2
+`jazzy-17887f598440ce4106c1bbd068d04ee560fd9709` tag. It contains ROS 2
 Jazzy on Ubuntu 24.04, colcon/rosdep, C++ and Python development tools,
 MuJoCo `ros2_control`, the controllers used for FR3 simulation, an
 Apache-2.0 licensed FR3 reference scene, and the core Franka ROS 2 packages
@@ -43,7 +43,7 @@ Create an empty project folder or open the developer's own Git repository. Add
 ```json
 {
   "name": "FR3 shared ROS 2 Jazzy development",
-  "image": "harbor.keti.xrds.kr/physical_ai_hub/ros2-fr3-dev:jazzy-a5003ecb9356a8377e46f23f87eccc61a68c5a0c",
+  "image": "harbor.keti.xrds.kr/physical_ai_hub/ros2-fr3-dev:jazzy-17887f598440ce4106c1bbd068d04ee560fd9709",
   "remoteUser": "ubuntu",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
 }
@@ -63,7 +63,7 @@ development server:
 docker run --rm -it \
   --mount "type=bind,src=$PWD,dst=/workspaces/app" \
   --workdir /workspaces/app \
-  harbor.keti.xrds.kr/physical_ai_hub/ros2-fr3-dev:jazzy-a5003ecb9356a8377e46f23f87eccc61a68c5a0c \
+  harbor.keti.xrds.kr/physical_ai_hub/ros2-fr3-dev:jazzy-17887f598440ce4106c1bbd068d04ee560fd9709 \
   bash
 ```
 
