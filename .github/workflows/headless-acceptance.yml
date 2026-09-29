@@ -102,3 +102,17 @@ jobs:
             python3 -c "import fr3_wave.wave; import fr3_wave.spin" &&
             ! ros2 pkg prefix mujoco_ros2_control
           '
+      - name: Publish tested runtime image to Harbor
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
+          HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
+        run: |
+          set -euo pipefail
+          : "${HARBOR_USERNAME:?Set the HARBOR_USERNAME GitHub Actions secret}"
+          : "${HARBOR_PASSWORD:?Set the HARBOR_PASSWORD GitHub Actions secret}"
+          image="harbor.keti.xrds.kr/physical_ai_hub/fr3-wave-runtime:runtime-$GITHUB_SHA"
+          printf '%s' "$HARBOR_PASSWORD" | docker login harbor.keti.xrds.kr \
+            --username "$HARBOR_USERNAME" --password-stdin
+          docker tag "fr3-wave-runtime:$GITHUB_SHA" "$image"
+          docker push "$image"

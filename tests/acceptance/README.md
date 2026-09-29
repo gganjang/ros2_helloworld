@@ -25,7 +25,10 @@ test from that exact image, and promotes it to the final runtime tag only after
 the smoke test passes. See [the CI setup guide](../../docs/gitlab-harbor.md)
 for Harbor access. The GitHub Actions workflow runs the same ROS tests as
 separate jobs, then builds and smoke tests the runtime image locally with
-BuildKit. It does not need Harbor credentials or publish an image.
+BuildKit. On pushes to `main`, it publishes that tested image to Harbor as
+`runtime-<commit SHA>` after the smoke test. Set the `HARBOR_USERNAME` and
+`HARBOR_PASSWORD` GitHub Actions repository secrets to the Harbor robot account
+credentials; pull requests run the tests without those secrets.
 Configure the repository branch rules to require the `headless-acceptance` job
 before merging; the workflow alone does not enforce a merge gate.
 
