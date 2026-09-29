@@ -18,10 +18,14 @@ Use the system Python that matches the installed ROS 2 distribution. The test
 assigns a separate ROS domain and writes the simulator log to a temporary
 directory, or to `CI_ARTIFACT_DIR` when that variable is set.
 
-The GitLab pipeline builds the development/test image, runs package tests and
-these acceptance tests inside it, and only then builds and checks the Control
-PC runtime image. A matching GitHub Actions workflow supports GitHub mirrors.
-Configure the repository branch rules to require the `acceptance` job before
+The GitLab pipeline uses rootless BuildKit to build and push the development/test
+image to the GitLab container registry. A separate job runs package tests and
+these acceptance tests in that image. After they pass, another BuildKit job
+builds the Control PC runtime image and a final job checks it. This requires
+the project container registry and a runner that permits rootless BuildKit's
+user namespace and mount operations. A matching GitHub Actions workflow
+supports GitHub mirrors.
+Configure the repository branch rules to require the `headless-acceptance` job before
 merging; the workflow alone does not enforce a merge gate.
 
 The headless MuJoCo job requires an x86-64 runner that exposes AVX in
