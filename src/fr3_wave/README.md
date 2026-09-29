@@ -55,6 +55,28 @@ The simulator server must expose that action name. For separate concurrent
 simulation jobs, isolate each simulator and its clients with a namespace or ROS
 domain, then configure the matching action name.
 
+## Franka fake-hardware interface check
+
+The MuJoCo scene uses `fr3v2_joint1` through `fr3v2_joint7`. The pinned Franka
+robot description uses `fr3_joint1` through `fr3_joint7`. The clients keep the
+MuJoCo names by default. For the Franka profile, set `joint_prefix:=fr3`; `wave`
+also needs `wave_joint:=fr3_joint5` (or another FR3 joint name).
+
+The shared dev image contains Franka's core ROS packages and `libfranka`. Run
+`/repo/scripts/test-franka-fake-client.sh` in that image with this repository
+mounted at `/repo` to build the app, start Franka fake hardware, load a
+`joint_trajectory_controller`, and send short `wave` and `spin` goals. GitHub CI runs this
+check on the main branch before publishing the app runtime image. Franka's
+standard bringup does not load this sample trajectory controller by itself.
+
+This check confirms ROS joint naming, action wiring, and controller activation.
+It uses mock hardware. The current runtime image contains the client only;
+real-robot operation still requires a validated controller configuration, a
+matching robot-system/libfranka version, Control PC network and real-time setup,
+and supervised hardware commissioning. The sample trajectory home pose and
+limits come from the MuJoCo model and require review against the actual robot
+before any physical motion.
+
 ## Docker and CI
 
 Build the shared developer/test image from the repository root:
@@ -88,7 +110,7 @@ image through Harbor. The [shared dev container guide](../../docs/dev-container.
 explains the reusable team base image; the bundled image above remains a
 project-specific test environment. See [the acceptance test guide](../../tests/acceptance/README.md).
 
-## Control PC runtime image
+## Client-only runtime prototype
 
 After the headless acceptance tests pass, CI builds a smaller image containing
 only the installed ROS 2 application clients and their runtime dependencies:
@@ -109,8 +131,9 @@ Override the command to run `spin`:
 docker run --rm --network host fr3-wave-runtime ros2 run fr3_wave spin
 ```
 
-The Control PC must already expose the configured
+The Control PC or simulator must already expose the configured
 `joint_trajectory_controller/follow_joint_trajectory` action to the container.
+This image has not been commissioned for real-robot execution.
 ROS discovery settings, such as `ROS_DOMAIN_ID` and the selected RMW transport,
 must match the Control PC. The runtime image does not contain MuJoCo, scene
 assets, acceptance tests, or AI model weights.

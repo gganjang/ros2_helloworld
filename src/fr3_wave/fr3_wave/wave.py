@@ -6,7 +6,7 @@ from rclpy.action import ActionClient
 from rclpy.node import Node
 from trajectory_msgs.msg import JointTrajectory
 
-from fr3_wave.arm import DEFAULT_ACTION, HOME, JOINTS, LIMITS, clamp, point, send_trajectory
+from fr3_wave.arm import DEFAULT_ACTION, HOME, clamp, joints_for, point, send_trajectory
 
 
 class Waver(Node):
@@ -14,6 +14,7 @@ class Waver(Node):
     def __init__(self):
         super().__init__('waver')
         self.declare_parameter('wave_joint', 'fr3v2_joint5')
+        self.declare_parameter('joint_prefix', 'fr3v2')
         self.declare_parameter('amplitude', 0.6)
         self.declare_parameter('cycles', 4)
         self.declare_parameter('period', 1.5)
@@ -31,14 +32,15 @@ class Waver(Node):
         period = self.get_parameter('period').value
         settle = self.get_parameter('settle_time').value
 
-        if joint not in LIMITS:
-            raise ValueError(f'unknown joint {joint}; expected one of {JOINTS}')
+        joints = joints_for(self.get_parameter('joint_prefix').value)
+        if joint not in joints:
+            raise ValueError(f'unknown joint {joint}; expected one of {joints}')
 
-        index = JOINTS.index(joint)
+        index = joints.index(joint)
         centre = HOME[index]
 
         traj = JointTrajectory()
-        traj.joint_names = JOINTS
+        traj.joint_names = joints
 
         # Settle at home first so the wave starts from a known pose.
         traj.points.append(point(HOME, settle))

@@ -6,7 +6,7 @@ from rclpy.action import ActionClient
 from rclpy.node import Node
 from trajectory_msgs.msg import JointTrajectory
 
-from fr3_wave.arm import DEFAULT_ACTION, HOME, JOINTS, LIMITS, MARGIN, clamp, point, send_trajectory
+from fr3_wave.arm import DEFAULT_ACTION, HOME, LIMITS, MARGIN, clamp, joints_for, point, send_trajectory
 
 SPIN_JOINT = 'fr3v2_joint1'
 
@@ -19,6 +19,7 @@ class Spinner(Node):
         self.declare_parameter('segment_time', 2.0)
         self.declare_parameter('settle_time', 3.0)
         self.declare_parameter('trajectory_action', DEFAULT_ACTION)
+        self.declare_parameter('joint_prefix', 'fr3v2')
         self.client = ActionClient(
             self, FollowJointTrajectory,
             self.get_parameter('trajectory_action').value)
@@ -32,14 +33,15 @@ class Spinner(Node):
         if amplitude > LIMITS[SPIN_JOINT][1] - MARGIN:
             raise ValueError('amplitude exceeds the base joint travel limit')
 
-        index = JOINTS.index(SPIN_JOINT)
+        joints = joints_for(self.get_parameter('joint_prefix').value)
+        index = 0
         positive = list(HOME)
         negative = list(HOME)
         positive[index] = clamp(SPIN_JOINT, HOME[index] + amplitude)
         negative[index] = clamp(SPIN_JOINT, HOME[index] - amplitude)
 
         trajectory = JointTrajectory()
-        trajectory.joint_names = JOINTS
+        trajectory.joint_names = joints
         # This joint cannot rotate continuously; sweep each direction and return home.
         trajectory.points = [
             point(HOME, settle),

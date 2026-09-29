@@ -6,6 +6,13 @@ from control_msgs.action import FollowJointTrajectory
 from trajectory_msgs.msg import JointTrajectoryPoint
 
 JOINTS = [f'fr3v2_joint{i}' for i in range(1, 8)]
+JOINT_PREFIXES = ('fr3v2', 'fr3')
+
+
+def joints_for(prefix):
+    if prefix not in JOINT_PREFIXES:
+        raise ValueError(f'joint_prefix must be one of {JOINT_PREFIXES}')
+    return [f'{prefix}_joint{i}' for i in range(1, 8)]
 
 # Limits from assets/models/franka_fr3_v2/fr3v2.xml.
 LIMITS = {
@@ -24,7 +31,10 @@ DEFAULT_ACTION = 'joint_trajectory_controller/follow_joint_trajectory'
 
 
 def clamp(name, value):
-    low, high = LIMITS[name]
+    # Both profiles represent the same FR3 joint ordering. The limits here
+    # belong to the sample MuJoCo model, not a real-hardware safety check.
+    index = int(name.rsplit('joint', 1)[1])
+    low, high = LIMITS[f'fr3v2_joint{index}']
     return min(max(value, low + MARGIN), high - MARGIN)
 
 

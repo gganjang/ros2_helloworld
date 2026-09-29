@@ -18,7 +18,9 @@ integration, are outside this base. Optional RViz and joystick/teleoperation
 dependencies are also omitted from the shared headless image. The future
 runtime image must contain the packages its application needs. The Control PC
 host will provide the real-time, network, and driver infrastructure. No robot or firmware compatibility has yet
-been verified.
+been verified. The sample app still defaults to the MuJoCo `fr3v2_joint*`
+names; the Franka mock integration check uses its `fr3_joint*` profile. See
+[the app guide](../src/fr3_wave/README.md#franka-fake-hardware-interface-check).
 
 ## Use it in this repository
 

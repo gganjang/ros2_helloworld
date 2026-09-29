@@ -79,8 +79,28 @@ jobs:
           path: test-artifacts/
           if-no-files-found: ignore
 
-  runtime-image:
+  franka-fake-acceptance:
     needs: headless-acceptance
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to Harbor for pinned dev base
+        env:
+          HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
+          HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
+        run: |
+          printf '%s' "$HARBOR_PASSWORD" | docker login harbor.keti.xrds.kr \
+            --username "$HARBOR_USERNAME" --password-stdin
+      - name: Test app with Franka fake hardware
+        run: |
+          docker run --rm -v "$PWD:/repo:ro" \
+            harbor.keti.xrds.kr/physical_ai_hub/ros2-fr3-dev:jazzy-24481ff58111de42a272bd9eee5cbfa551165061 \
+            bash /repo/scripts/test-franka-fake-client.sh
+
+  runtime-image:
+    needs: [headless-acceptance, franka-fake-acceptance]
+    if: always() && needs.headless-acceptance.result == 'success' && (github.event_name == 'pull_request' || needs.franka-fake-acceptance.result == 'success')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
