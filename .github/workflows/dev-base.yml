@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - Dockerfile.dev-base
+      - assets/models/franka_fr3_v2/**
       - .github/workflows/dev-base.yml
   workflow_dispatch:
 

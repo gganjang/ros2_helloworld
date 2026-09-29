@@ -40,7 +40,7 @@ project. The `jazzy` tag follows the most recently published base.
 ## Maintain the image
 
 `Dockerfile.dev-base` is the prototype source in this repository. On changes to
-that file, [the GitHub workflow](../.github/workflows/dev-base.yml) builds the
+that file or the bundled FR3 model assets, [the GitHub workflow](../.github/workflows/dev-base.yml) builds the
 image with BuildKit, checks ROS and MuJoCo tools, and pushes both tags to Harbor
 only after the smoke test. It uses the existing `HARBOR_USERNAME` and
 `HARBOR_PASSWORD` GitHub Actions secrets. To build locally:
