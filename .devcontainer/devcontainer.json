@@ -1,0 +1,10 @@
+{
+  "name": "FR3 ROS 2 Jazzy development",
+  "image": "harbor.keti.xrds.kr/physical_ai_hub/ros2-fr3-dev:jazzy",
+  "remoteUser": "ubuntu",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "containerEnv": {
+    "FR3_MUJOCO_SCENE": "${containerWorkspaceFolder}/assets/models/franka_fr3_v2/scene.xml"
+  },
+  "postCreateCommand": "bash -lc 'source /opt/ros/jazzy/setup.bash && colcon build --symlink-install --packages-select fr3_wave'"
+}

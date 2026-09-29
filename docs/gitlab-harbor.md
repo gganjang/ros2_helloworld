@@ -1,5 +1,7 @@
 # GitLab CI with Harbor
 
+For the multi-repository team setup, see the [shared Harbor guide](shared-harbor-guide.md).
+
 The GitLab pipeline uses `harbor.keti.xrds.kr/physical_ai_hub/fr3-wave-runtime`.
 On the default branch it pushes only the runtime image: first as
 `candidate-<commit SHA>` for a smoke test, then as `runtime-<commit SHA>` after

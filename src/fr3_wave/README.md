@@ -84,8 +84,9 @@ connection; the headless commands above work without one.
 
 The GitLab pipeline runs ROS package tests and headless MuJoCo acceptance
 tests in separate stages, then builds, smoke-tests, and publishes the runtime
-image through Harbor. The GitHub Actions workflow also builds this development
-image. See [the acceptance test guide](../../tests/acceptance/README.md).
+image through Harbor. The [shared dev container guide](../../docs/dev-container.md)
+explains the reusable team base image; the bundled image above remains a
+project-specific test environment. See [the acceptance test guide](../../tests/acceptance/README.md).
 
 ## Control PC runtime image
 
