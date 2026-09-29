@@ -2,6 +2,9 @@
 # Application source and runtime deployments belong to each repository.
 FROM ros:jazzy-ros-base-noble
 
+LABEL org.opencontainers.image.title="Shared FR3 ROS 2 Jazzy development base" \
+      org.opencontainers.image.description="Team development tools, MuJoCo and Franka; application source and CUDA belong to project images"
+
 SHELL ["/bin/bash", "-c"]
 
 ARG DEBIAN_FRONTEND=noninteractive

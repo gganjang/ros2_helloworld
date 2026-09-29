@@ -6,6 +6,9 @@ set -u
 
 test "$(id -un)" = ubuntu
 sudo -n true
+# The shared base stays CUDA-free; projects own CUDA in their runtime images.
+! command -v nvcc >/dev/null 2>&1
+test ! -d /usr/local/cuda
 command -v colcon
 command -v rosdep
 command -v tmux
