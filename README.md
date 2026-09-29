@@ -33,7 +33,7 @@ For a new application, create an empty project folder or open its own Git
 repository, then copy this generic `.devcontainer/devcontainer.json` into it.
 No `fr3_wave` checkout or `postCreateCommand` is required. The shared image
 does not contain `fr3_wave` source. Its immutable published
-tag is `harbor.keti.xrds.kr/physical_ai_hub/ros2-fr3-dev:jazzy-0c84c486a85aed0a8cb18114f82ab89b964c0af9`.
+tag is `harbor.keti.xrds.kr/physical_ai_hub/ros2-fr3-dev:jazzy-a5003ecb9356a8377e46f23f87eccc61a68c5a0c`.
 
 GitHub Actions is the active CI platform while the GitLab runner environment
 is being repaired. Changes to this sample do not rebuild or republish the

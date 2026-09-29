@@ -1,6 +1,6 @@
 {
   "name": "FR3 shared ROS 2 Jazzy development",
-  "image": "harbor.keti.xrds.kr/physical_ai_hub/ros2-fr3-dev:jazzy-0c84c486a85aed0a8cb18114f82ab89b964c0af9",
+  "image": "harbor.keti.xrds.kr/physical_ai_hub/ros2-fr3-dev:jazzy-a5003ecb9356a8377e46f23f87eccc61a68c5a0c",
   "remoteUser": "ubuntu",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
 }
