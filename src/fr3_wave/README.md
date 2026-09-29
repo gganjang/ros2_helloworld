@@ -82,9 +82,9 @@ The Docker image contains ROS 2, MuJoCo, the FR3 simulation assets, and the
 project code. It contains no AI model weights. GUI mode requires a host display
 connection; the headless commands above work without one.
 
-The GitLab pipeline builds this image on pushes and merge requests, runs ROS
-package tests, then runs platform acceptance tests against headless MuJoCo.
-A matching GitHub Actions workflow is included for GitHub mirrors. See
+The GitLab pipeline runs ROS package tests and headless MuJoCo acceptance
+tests in separate stages, then builds and pushes only the runtime image.
+The GitHub Actions workflow also builds this development image. See
 [the acceptance test guide](../../tests/acceptance/README.md).
 
 ## Control PC runtime image

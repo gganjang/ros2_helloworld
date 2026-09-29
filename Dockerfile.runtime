@@ -28,5 +28,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=build /workspace/install/ /opt/fr3_wave/
 COPY docker/runtime-entrypoint.sh /runtime-entrypoint.sh
 
+# Verify the final runtime filesystem before BuildKit exports or pushes it.
+RUN source /opt/ros/jazzy/setup.bash \
+    && source /opt/fr3_wave/setup.bash \
+    && ros2 pkg executables fr3_wave | grep -F "fr3_wave wave" \
+    && ros2 pkg executables fr3_wave | grep -F "fr3_wave spin" \
+    && ! ros2 pkg prefix mujoco_ros2_control
+
 ENTRYPOINT ["/runtime-entrypoint.sh"]
 CMD ["ros2", "run", "fr3_wave", "wave"]

@@ -1,11 +1,70 @@
 stages:
-  - build-test-image
-  - test
-  - build-runtime-image
-  - verify
+  - package-test
+  - acceptance
+  - publish
 
-# BuildKit runs inside the job container; no Docker daemon or DinD service is used.
-.buildkit:
+package-test:
+  stage: package-test
+  image: ros:jazzy-ros-base-noble
+  variables:
+    DEBIAN_FRONTEND: noninteractive
+  script:
+    - |
+      set -e
+      apt-get update
+      apt-get install -y --no-install-recommends \
+        python3-pytest \
+        ros-jazzy-rclpy \
+        ros-jazzy-control-msgs \
+        ros-jazzy-trajectory-msgs \
+        ros-jazzy-builtin-interfaces
+      . /opt/ros/jazzy/setup.sh
+      colcon build --packages-select fr3_wave
+      . install/setup.sh
+      colcon test --packages-select fr3_wave
+      colcon test-result --verbose
+
+headless-acceptance:
+  stage: acceptance
+  image: ros:jazzy-ros-base-noble
+  variables:
+    DEBIAN_FRONTEND: noninteractive
+  before_script:
+    - |
+      set -e
+      if ! grep -qw avx /proc/cpuinfo; then
+        echo "ERROR: MuJoCo requires an x86-64 runner with AVX exposed."
+        echo "Assign this job to an AVX-capable runner or enable host CPU passthrough for the runner VM."
+        exit 1
+      fi
+  script:
+    - |
+      set -e
+      apt-get update
+      apt-get install -y --no-install-recommends \
+        python3-pytest \
+        ros-jazzy-mujoco-ros2-control \
+        ros-jazzy-joint-trajectory-controller \
+        ros-jazzy-joint-state-broadcaster \
+        ros-jazzy-robot-state-publisher \
+        ros-jazzy-control-msgs \
+        ros-jazzy-trajectory-msgs \
+        ros-jazzy-sensor-msgs
+      mkdir -p "$CI_PROJECT_DIR/test-artifacts"
+      export CI_ARTIFACT_DIR="$CI_PROJECT_DIR/test-artifacts"
+      . /opt/ros/jazzy/setup.sh
+      colcon build --packages-select fr3_wave
+      . install/setup.sh
+      /usr/bin/python3 -m pytest -q tests/acceptance
+  artifacts:
+    when: always
+    paths:
+      - test-artifacts/
+    expire_in: 1 week
+
+publish-runtime-image:
+  stage: publish
+  dependencies: []
   image:
     name: moby/buildkit:rootless
     entrypoint: [""]
@@ -13,72 +72,20 @@ stages:
     BUILDKITD_FLAGS: --oci-worker-no-process-sandbox --config /tmp/buildkitd.toml
   before_script:
     - |
-      : "${CI_REGISTRY_IMAGE:?Enable the GitLab Container Registry for this project before building images}"
+      set -e
+      : "${CI_REGISTRY_IMAGE:?Enable the GitLab Container Registry for this project to publish the runtime image}"
       : "${CI_REGISTRY_USER:?GitLab Container Registry credentials are unavailable}"
       : "${CI_REGISTRY_PASSWORD:?GitLab Container Registry credentials are unavailable}"
       mkdir -p "$HOME/.docker"
       auth="$(printf '%s:%s' "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" | base64 | tr -d '\n')"
       printf '{"auths":{"%s":{"auth":"%s"}}}\n' "$CI_REGISTRY" "$auth" > "$HOME/.docker/config.json"
       printf '[worker.oci]\n  max-parallelism = 2\n' > /tmp/buildkitd.toml
-
-build-test-image:
-  extends: .buildkit
-  stage: build-test-image
   script:
     - |
-      buildctl-daemonless.sh build \
-        --frontend dockerfile.v0 \
-        --local context=. \
-        --local dockerfile=. \
-        --output "type=image,name=$CI_REGISTRY_IMAGE:ci-$CI_COMMIT_SHA,push=true"
-
-headless-acceptance:
-  stage: test
-  image: "$CI_REGISTRY_IMAGE:ci-$CI_COMMIT_SHA"
-  needs: [build-test-image]
-  before_script:
-    - |
-      if ! grep -qw avx /proc/cpuinfo; then
-        echo "ERROR: MuJoCo requires an x86-64 runner with AVX exposed."
-        echo "Assign this job to an AVX-capable runner or enable host CPU passthrough for the runner VM."
-        exit 1
-      fi
-  script:
-    - mkdir -p "$CI_PROJECT_DIR/test-artifacts"
-    - export CI_ARTIFACT_DIR="$CI_PROJECT_DIR/test-artifacts"
-    - cd /workspace
-    - . /workspace/install/setup.sh
-    - colcon test
-    - colcon test-result --verbose
-    - /usr/bin/python3 -m pytest -q /workspace/tests/acceptance
-  artifacts:
-    when: always
-    paths:
-      - test-artifacts/
-    expire_in: 1 week
-
-build-runtime-image:
-  extends: .buildkit
-  stage: build-runtime-image
-  needs: [headless-acceptance]
-  script:
-    - |
+      set -e
       buildctl-daemonless.sh build \
         --frontend dockerfile.v0 \
         --local context=. \
         --local dockerfile=. \
         --opt filename=Dockerfile.runtime \
         --output "type=image,name=$CI_REGISTRY_IMAGE:runtime-$CI_COMMIT_SHA,push=true"
-
-verify-runtime-image:
-  stage: verify
-  image:
-    name: "$CI_REGISTRY_IMAGE:runtime-$CI_COMMIT_SHA"
-    entrypoint: [""]
-  needs: [build-runtime-image]
-  script:
-    - . /opt/ros/jazzy/setup.sh
-    - . /opt/fr3_wave/setup.sh
-    - ros2 pkg executables fr3_wave | grep -F "fr3_wave wave"
-    - ros2 pkg executables fr3_wave | grep -F "fr3_wave spin"
-    - '! ros2 pkg prefix mujoco_ros2_control'
