@@ -19,7 +19,7 @@ DEFAULT_SCENE = os.environ.get(
 
 
 def start_simulator(context):
-    share = get_package_share_directory('fr3_wave')
+    share = os.environ.get('FR3_MUJOCO_CONFIG_DIR') or get_package_share_directory('fr3_wave')
     urdf = os.path.join(share, 'urdf', 'fr3v2.urdf')
     controllers = os.path.join(share, 'config', 'controllers.yaml')
     scene = LaunchConfiguration('scene').perform(context)

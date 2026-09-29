@@ -12,6 +12,11 @@ team members develop their own applications in their own repositories.
 | [`assets/models/franka_fr3_v2/`](assets/models/franka_fr3_v2/) | Licensed FR3 reference scene used by the shared image and the sample. |
 | [`docs/dev-container.md`](docs/dev-container.md) | Developer setup, Harbor pull access, and optional Samba share. |
 
+To run the bundled FR3 MuJoCo simulator from any project opened in the shared
+dev image, use `ros2 launch /opt/franka/fr3v2/launch/mujoco.launch.py
+headless:=true`. The sample repository is only needed for its application
+clients and tests.
+
 ## Try the sample
 
 Open this repository with VS Code Remote SSH and **Dev Containers: Reopen in

@@ -31,13 +31,32 @@ ros2 pkg prefix franka_hardware
 ros2 pkg prefix franka_bringup
 dpkg-query -W -f='${Version}\n' libfranka | grep -Fx '0.20.5'
 test -f "$FR3_MUJOCO_SCENE"
+test -f "$FR3_MUJOCO_CONFIG_DIR/config/controllers.yaml"
+test -f "$FR3_MUJOCO_CONFIG_DIR/urdf/fr3v2.urdf"
+test -f "$FR3_MUJOCO_CONFIG_DIR/launch/mujoco.launch.py"
 python3 -c 'import rclpy'
+
+# Start the bundled simulator without mounting the sample repository.
+sim_log=$(mktemp)
+trap 'rm -f "$sim_log"' EXIT
+set +e
+timeout --signal=INT --kill-after=5s 15s \
+  ros2 launch "$FR3_MUJOCO_CONFIG_DIR/launch/mujoco.launch.py" headless:=true \
+  >"$sim_log" 2>&1
+sim_status=$?
+set -e
+if ! { test "$sim_status" -eq 124 &&
+       grep -Fq 'Configured and activated joint_trajectory_controller' "$sim_log"; }; then
+  cat "$sim_log"
+  exit 1
+fi
+printf 'Bundled FR3 MuJoCo simulator started successfully\n'
 
 # Verify the Samba server can authenticate and write a workspace file.
 share_dir=$(mktemp -d /workspaces/samba-smoke.XXXXXX)
 auth_file=$(mktemp)
 log_file=$(mktemp)
-trap 'rm -rf "$share_dir" "$auth_file" "$log_file"' EXIT
+trap 'rm -rf "$share_dir" "$auth_file" "$log_file" "$sim_log"' EXIT
 password="Ci$(date +%s)${RANDOM}${RANDOM}"
 printf 'username = ubuntu\npassword = %s\n' "$password" > "$auth_file"
 chmod 0600 "$auth_file"

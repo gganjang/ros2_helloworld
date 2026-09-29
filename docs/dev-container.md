@@ -10,8 +10,10 @@ It also has `tmux`, `nano`, Vim, `rg`, `jq`, `less`, `tree`, `htop`, and
 basic process/network diagnostics (`ps`, `ip`, `ping`, `lsof`). Samba server
 and client tools are installed for sharing a development workspace. It runs as
 the non-root `ubuntu` user.
-Application source, project-specific scenes, model weights, and credentials
-are not baked into this shared image.
+The image also bundles the matching simulation-only
+`controllers.yaml`, `fr3v2.urdf`, and MuJoCo launch file under
+`/opt/franka/fr3v2/`. Application source, project-specific scenes, model
+weights, and credentials are not baked into this shared image.
 
 The Franka packages come from `franka_ros2` v3.5.3, with `libfranka` 0.20.5
 and `franka_description` 2.9.0. These pinned versions let developers build
@@ -69,6 +71,23 @@ The bind mount keeps application files on the development server. With the
 terminal-only command, ensure the container's `ubuntu` user can write to that
 host directory. VS Code Dev Containers can adjust the container user's UID for
 this case.
+
+## Run the shared FR3 simulator
+
+In the dev container, start the bundled MuJoCo controller without cloning this
+sample repository:
+
+```bash
+ros2 launch /opt/franka/fr3v2/launch/mujoco.launch.py headless:=true
+```
+
+Use `headless:=false` when a display is available, or
+`scene:=/path/to/scene.xml` for a project-specific scene. Applications can
+connect to its `joint_trajectory_controller/follow_joint_trajectory` action.
+The bundled URDF declares simulation control interfaces; its link poses are
+placeholders and must **not** be used as real-robot geometry or for accurate
+TF/RViz visualization. The controller YAML is tuned to the bundled MuJoCo
+model, not physical hardware.
 
 ## Try the optional sample
 

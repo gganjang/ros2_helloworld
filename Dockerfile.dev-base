@@ -109,7 +109,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY --chmod=0755 scripts/start-samba-share.sh /usr/local/bin/start-samba-share
 COPY assets/models/franka_fr3_v2/ /opt/franka/fr3v2/
-ENV FR3_MUJOCO_SCENE=/opt/franka/fr3v2/scene.xml
+COPY examples/fr3_wave/src/fr3_wave/config/controllers.yaml /opt/franka/fr3v2/config/controllers.yaml
+COPY examples/fr3_wave/src/fr3_wave/urdf/fr3v2.urdf /opt/franka/fr3v2/urdf/fr3v2.urdf
+COPY examples/fr3_wave/src/fr3_wave/launch/mujoco.launch.py /opt/franka/fr3v2/launch/mujoco.launch.py
+ENV FR3_MUJOCO_SCENE=/opt/franka/fr3v2/scene.xml \
+    FR3_MUJOCO_CONFIG_DIR=/opt/franka/fr3v2
 
 WORKDIR /workspaces
 USER ubuntu
