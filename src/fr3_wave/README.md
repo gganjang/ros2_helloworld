@@ -83,9 +83,9 @@ project code. It contains no AI model weights. GUI mode requires a host display
 connection; the headless commands above work without one.
 
 The GitLab pipeline runs ROS package tests and headless MuJoCo acceptance
-tests in separate stages, then builds and pushes only the runtime image.
-The GitHub Actions workflow also builds this development image. See
-[the acceptance test guide](../../tests/acceptance/README.md).
+tests in separate stages, then builds, smoke-tests, and publishes the runtime
+image through Harbor. The GitHub Actions workflow also builds this development
+image. See [the acceptance test guide](../../tests/acceptance/README.md).
 
 ## Control PC runtime image
 

@@ -19,13 +19,13 @@ assigns a separate ROS domain and writes the simulator log to a temporary
 directory, or to `CI_ARTIFACT_DIR` when that variable is set.
 
 The GitLab pipeline runs ROS package tests and headless acceptance tests in
-separate stages. After both pass, rootless BuildKit builds and checks the
-Control PC runtime image, then pushes only that image to the GitLab container
-registry. The project container registry must be enabled, and the runner must
-permit rootless BuildKit's user namespace and mount operations. A matching
-GitHub Actions workflow supports GitHub mirrors.
-Configure the repository branch rules to require the `headless-acceptance` job before
-merging; the workflow alone does not enforce a merge gate.
+separate stages. On the default branch, it builds the runtime image with
+rootless BuildKit, pushes a commit-tagged candidate to Harbor, runs a smoke
+test from that exact image, and promotes it to the final runtime tag only after
+the smoke test passes. See [the CI setup guide](../../docs/gitlab-harbor.md)
+for Harbor access. A matching GitHub Actions workflow supports GitHub mirrors.
+Configure the repository branch rules to require the `headless-acceptance` job
+before merging; the workflow alone does not enforce a merge gate.
 
 The headless MuJoCo job requires an x86-64 runner that exposes AVX in
 `/proc/cpuinfo`. Containers use the runner host CPU instruction set, so a

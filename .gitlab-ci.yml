@@ -1,6 +1,8 @@
 stages:
   - package-test
   - acceptance
+  - build-runtime
+  - smoke-runtime
   - publish
 
 package-test:
@@ -62,8 +64,12 @@ headless-acceptance:
       - test-artifacts/
     expire_in: 1 week
 
-publish-runtime-image:
-  stage: publish
+# DOCKER_AUTH_CONFIG is a GitLab CI variable containing Harbor robot credentials.
+# The runner uses it to pull the private candidate image before smoke-runtime starts.
+build-runtime-candidate:
+  stage: build-runtime
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
   dependencies: []
   image:
     name: moby/buildkit:rootless
@@ -73,12 +79,9 @@ publish-runtime-image:
   before_script:
     - |
       set -e
-      : "${CI_REGISTRY_IMAGE:?Enable the GitLab Container Registry for this project to publish the runtime image}"
-      : "${CI_REGISTRY_USER:?GitLab Container Registry credentials are unavailable}"
-      : "${CI_REGISTRY_PASSWORD:?GitLab Container Registry credentials are unavailable}"
+      : "${DOCKER_AUTH_CONFIG:?Set Harbor DOCKER_AUTH_CONFIG in GitLab CI variables}"
       mkdir -p "$HOME/.docker"
-      auth="$(printf '%s:%s' "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" | base64 | tr -d '\n')"
-      printf '{"auths":{"%s":{"auth":"%s"}}}\n' "$CI_REGISTRY" "$auth" > "$HOME/.docker/config.json"
+      printf '%s' "$DOCKER_AUTH_CONFIG" > "$HOME/.docker/config.json"
       printf '[worker.oci]\n  max-parallelism = 2\n' > /tmp/buildkitd.toml
   script:
     - |
@@ -88,4 +91,41 @@ publish-runtime-image:
         --local context=. \
         --local dockerfile=. \
         --opt filename=Dockerfile.runtime \
-        --output "type=image,name=$CI_REGISTRY_IMAGE:runtime-$CI_COMMIT_SHA,push=true"
+        --output "type=image,name=harbor.keti.xrds.kr/physical_ai_hub/fr3-wave-runtime:candidate-$CI_COMMIT_SHA,push=true"
+
+smoke-runtime-image:
+  stage: smoke-runtime
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  image:
+    name: "harbor.keti.xrds.kr/physical_ai_hub/fr3-wave-runtime:candidate-$CI_COMMIT_SHA"
+    entrypoint: [""]
+  needs: [build-runtime-candidate]
+  script:
+    - |
+      set -e
+      /runtime-entrypoint.sh bash -lc '
+        ros2 pkg executables fr3_wave | grep -F "fr3_wave wave" &&
+        ros2 pkg executables fr3_wave | grep -F "fr3_wave spin" &&
+        python3 -c "import fr3_wave.wave; import fr3_wave.spin" &&
+        ! ros2 pkg prefix mujoco_ros2_control
+      '
+
+publish-runtime-image:
+  stage: publish
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  image:
+    name: quay.io/skopeo/stable:latest
+    entrypoint: [""]
+  needs: [smoke-runtime-image]
+  script:
+    - |
+      set -e
+      : "${DOCKER_AUTH_CONFIG:?Set Harbor DOCKER_AUTH_CONFIG in GitLab CI variables}"
+      mkdir -p "$HOME/.docker"
+      printf '%s' "$DOCKER_AUTH_CONFIG" > "$HOME/.docker/config.json"
+      skopeo copy --all --preserve-digests \
+        --authfile "$HOME/.docker/config.json" \
+        "docker://harbor.keti.xrds.kr/physical_ai_hub/fr3-wave-runtime:candidate-$CI_COMMIT_SHA" \
+        "docker://harbor.keti.xrds.kr/physical_ai_hub/fr3-wave-runtime:runtime-$CI_COMMIT_SHA"
